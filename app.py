@@ -7,20 +7,39 @@ import sys
 
 app = Flask(__name__)
 
-# Get the database URL from Render's environment variable
-database_url = os.environ.get('DATABASE_URL', 'sqlite:///orders.db')
-
-# Check if we're on Render and fix the PostgreSQL URL format
-if database_url.startswith("postgres://"):
-    database_url = database_url.replace("postgres://", "postgresql://", 1)
-
-app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# Print for debugging
-print(f"Using database URL: {app.config['SQLALCHEMY_DATABASE_URI']}")
-
-db = SQLAlchemy(app)
+# Try multiple options for database URL to resolve the environment variable issues
+try:
+    # First attempt - directly set SQLite for simplicity
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///orders.db'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    print(f"Using database: sqlite:///orders.db")
+    
+    db = SQLAlchemy(app)
+    
+    # Test connection
+    with app.app_context():
+        db.engine.connect()
+    
+    print("Successfully connected to SQLite database")
+    
+except Exception as e:
+    print(f"SQLite connection failed: {str(e)}", file=sys.stderr)
+    print("Attempting to use backup database configuration...")
+    
+    try:
+        # Fallback to PostgreSQL with hardcoded credentials as a last resort
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@localhost:5432/postgres'
+        db = SQLAlchemy(app)
+        
+        # Test connection
+        with app.app_context():
+            db.engine.connect()
+            
+        print("Successfully connected to PostgreSQL database")
+        
+    except Exception as e2:
+        print(f"PostgreSQL connection also failed: {str(e2)}", file=sys.stderr)
+        sys.exit(1)
 
 # Order model
 class Order(db.Model):
