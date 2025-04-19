@@ -3,22 +3,35 @@ from flask_sqlalchemy import SQLAlchemy
 import uuid
 from datetime import datetime
 import os
+import sys
 
 app = Flask(__name__)
 
-# Set default database URL - use PostgreSQL on Render, SQLite locally
-database_url = os.environ.get('DATABASE_URL')
-if database_url:
-    # Fix for PostgreSQL URL format on Render
-    if database_url.startswith("postgres://"):
-        database_url = database_url.replace("postgres://", "postgresql://", 1)
-else:
-    # Use SQLite for local development
-    database_url = 'sqlite:///orders.db'
+# Print environment variables for debugging
+print("Environment variables:")
+print(f"DATABASE_URL: {os.environ.get('DATABASE_URL')}")
 
-app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+try:
+    # Set database URL - simplify the approach
+    if 'DATABASE_URL' in os.environ:
+        # Get from environment (Render)
+        database_url = os.environ['DATABASE_URL']
+        # Fix PostgreSQL URL format if needed
+        if database_url.startswith("postgres://"):
+            database_url = database_url.replace("postgres://", "postgresql://", 1)
+        print(f"Using database URL from environment: {database_url}")
+    else:
+        # Use SQLite for local development
+        database_url = 'sqlite:///orders.db'
+        print(f"Using local SQLite database: {database_url}")
+    
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    db = SQLAlchemy(app)
+    
+except Exception as e:
+    print(f"Error configuring database: {str(e)}", file=sys.stderr)
+    sys.exit(1)
 
 # Order model
 class Order(db.Model):
