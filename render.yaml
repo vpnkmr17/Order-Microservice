@@ -6,12 +6,4 @@ services:
     startCommand: gunicorn app:app
     envVars:
       - key: PYTHON_VERSION
-        value: 3.12.4
-      - key: DATABASE_URL
-        value: postgresql://postgres:postgres@postgres:5432/postgres
-
-databases:
-  - name: postgres
-    databaseName: postgres
-    user: postgres
-    plan: free 
+        value: 3.12.4 

@@ -7,8 +7,14 @@ import sys
 
 app = Flask(__name__)
 
-# Directly set PostgreSQL database URL - hardcoded to avoid environment variable issues
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@postgres:5432/postgres'
+# Get the database URL from Render's environment variable
+database_url = os.environ.get('DATABASE_URL', 'sqlite:///orders.db')
+
+# Check if we're on Render and fix the PostgreSQL URL format
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Print for debugging
